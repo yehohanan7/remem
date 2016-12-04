@@ -1,6 +1,7 @@
 # remem
 - make quick notes/tips from within your terminal
-- remem will then present a note/tip randomly every time you open a terminal session
+- remem will then present a tip randomly every time you open a terminal session
+- keep your brain's memory cache warm ;) 
 
 ## Installation
 ```
