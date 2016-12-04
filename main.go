@@ -1,53 +1,16 @@
 package main
 
 import (
+	"bolt"
 	"bufio"
 	"fmt"
 	"log"
 	"os"
 	"os/user"
-	"time"
 
-	"strconv"
-
-	"math/rand"
-
-	"github.com/boltdb/bolt"
 	"github.com/urfave/cli"
+	. "github.com/yehohanan7/remem/commands"
 )
-
-const (
-	BUCKET_NAME = "Fortunes"
-	DEFAULT_KEY = "0"
-)
-
-func random(n int) int {
-	rand.Seed(time.Now().Unix())
-	return rand.Intn(n)
-}
-
-func getNewKey(bucket *bolt.Bucket) (key string) {
-	v := string(bucket.Get([]byte("keys")))
-	if v == "" {
-		key = DEFAULT_KEY
-	} else {
-		lastKey, _ := strconv.Atoi(v)
-		key = strconv.Itoa(lastKey + 1)
-	}
-	_ = bucket.Put([]byte("keys"), []byte(key))
-	return
-}
-
-func addFortune(bucket *bolt.Bucket) {
-	text := readText(bufio.NewReader(os.Stdin))
-	_ = bucket.Put([]byte(getNewKey(bucket)), []byte(text))
-}
-
-func printFortune(bucket *bolt.Bucket) {
-	key, _ := strconv.Atoi(string(bucket.Get([]byte("keys"))))
-	v := string(bucket.Get([]byte(strconv.Itoa(random(key + 1)))))
-	fmt.Println(v)
-}
 
 func readText(reader *bufio.Reader) string {
 	var text string
@@ -73,22 +36,6 @@ func flags() []cli.Flag {
 	}
 }
 
-func execute(c *cli.Context, fn func(*bolt.Bucket)) {
-	db, err := bolt.Open(c.String("db"), 0600, nil)
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer db.Close()
-	db.Update(func(tx *bolt.Tx) error {
-		bucket, err := tx.CreateBucketIfNotExists([]byte(BUCKET_NAME))
-		if err != nil {
-			return fmt.Errorf("error initializing the db", err)
-		}
-		fn(bucket)
-		return nil
-	})
-}
-
 func main() {
 	flags := flags()
 	app := cli.NewApp()
@@ -102,7 +49,9 @@ func main() {
 			Usage:   "show a random note",
 			Flags:   flags,
 			Action: func(c *cli.Context) {
-				execute(c, printFortune)
+				Execute(c, func(bucket *bolt.Bucket) {
+					fmt.Println(GetFortune(bucket))
+				})
 			},
 		},
 		{
@@ -111,7 +60,9 @@ func main() {
 			Aliases: []string{"a"},
 			Flags:   flags,
 			Action: func(c *cli.Context) {
-				execute(c, addFortune)
+				Execute(c, func(bucket *bolt.Bucket) {
+					AddFortune(bucket, readText(bufio.NewReader(os.Stdin)))
+				})
 			},
 		},
 	}
