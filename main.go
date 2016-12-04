@@ -1,7 +1,6 @@
 package main
 
 import (
-	"bolt"
 	"bufio"
 	"fmt"
 	"log"
@@ -9,13 +8,13 @@ import (
 	"os/user"
 
 	"github.com/urfave/cli"
-	. "github.com/yehohanan7/remem/commands"
+	"github.com/yehohanan7/remem/repo"
 )
 
-func readText(reader *bufio.Reader) string {
+func readText(reader *bufio.Reader, terminator string) string {
 	var text string
 	input, err := reader.ReadString('\n')
-	for ; input != ".\n" && err == nil; input, err = reader.ReadString('\n') {
+	for ; input != terminator && err == nil; input, err = reader.ReadString('\n') {
 		text = text + input
 	}
 	return text
@@ -49,9 +48,9 @@ func main() {
 			Usage:   "show a random note",
 			Flags:   flags,
 			Action: func(c *cli.Context) {
-				Execute(c, func(bucket *bolt.Bucket) {
-					fmt.Println(GetFortune(bucket))
-				})
+				repo := repo.NewFortuneRepo(c.String("db"))
+				defer repo.Close()
+				fmt.Println(repo.GetRandom())
 			},
 		},
 		{
@@ -60,9 +59,9 @@ func main() {
 			Aliases: []string{"a"},
 			Flags:   flags,
 			Action: func(c *cli.Context) {
-				Execute(c, func(bucket *bolt.Bucket) {
-					AddFortune(bucket, readText(bufio.NewReader(os.Stdin)))
-				})
+				repo := repo.NewFortuneRepo(c.String("db"))
+				defer repo.Close()
+				repo.Add(readText(bufio.NewReader(os.Stdin), ".\n"))
 			},
 		},
 	}
