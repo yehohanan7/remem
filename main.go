@@ -9,6 +9,8 @@ import (
 
 	"github.com/urfave/cli"
 	"github.com/yehohanan7/remem/repo"
+
+	"github.com/fatih/color"
 )
 
 func readText(reader *bufio.Reader, terminator string) string {
@@ -44,7 +46,9 @@ func addFortune(c *cli.Context) {
 func printFortune(c *cli.Context) {
 	repo := repo.NewFortuneRepo(c.String("db"))
 	defer repo.Close()
-	fmt.Println(repo.GetRandom())
+	d := color.New(color.FgGreen, color.Bold)
+	d.Printf(repo.GetRandom())
+	fmt.Println()
 }
 
 func main() {
