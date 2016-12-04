@@ -35,36 +35,41 @@ func flags() []cli.Flag {
 	}
 }
 
+func addFortune(c *cli.Context) {
+	repo := repo.NewFortuneRepo(c.String("db"))
+	defer repo.Close()
+	repo.Add(readText(bufio.NewReader(os.Stdin), ".\n"))
+}
+
+func printFortune(c *cli.Context) {
+	repo := repo.NewFortuneRepo(c.String("db"))
+	defer repo.Close()
+	fmt.Println(repo.GetRandom())
+}
+
 func main() {
 	flags := flags()
+
 	app := cli.NewApp()
 	app.Version = "1.0"
 	app.Name = "remem"
-
+	app.Flags = flags
 	app.Commands = []cli.Command{
 		{
 			Name:    "show",
 			Aliases: []string{"s"},
 			Usage:   "show a random note",
 			Flags:   flags,
-			Action: func(c *cli.Context) {
-				repo := repo.NewFortuneRepo(c.String("db"))
-				defer repo.Close()
-				fmt.Println(repo.GetRandom())
-			},
+			Action:  printFortune,
 		},
 		{
 			Name:    "add",
 			Usage:   "add a note",
 			Aliases: []string{"a"},
 			Flags:   flags,
-			Action: func(c *cli.Context) {
-				repo := repo.NewFortuneRepo(c.String("db"))
-				defer repo.Close()
-				repo.Add(readText(bufio.NewReader(os.Stdin), ".\n"))
-			},
+			Action:  addFortune,
 		},
 	}
-
+	app.Action = addFortune
 	app.Run(os.Args)
 }
